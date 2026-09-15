@@ -1,0 +1,8 @@
+.env
+outputs/
+hf-cache/
+*.flac
+*.wav
+*.mp3
+__pycache__/
+.venv/

@@ -1,0 +1,7 @@
+# Server-side deps only. yue2-infer itself is installed from the pinned git
+# commit by onstart.sh (its pyproject hard-pins torch==2.10.0, transformers,
+# huggingface-hub, soundfile, numpy, etc.).
+fastapi==0.141.1
+uvicorn==0.53.0
+pydantic==2.13.5
+soundfile==0.13.1
