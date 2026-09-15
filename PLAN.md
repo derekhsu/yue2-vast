@@ -117,3 +117,21 @@ POST /v1/audio/plan → {"id", "abc", "truncated", "timing"}
 1. **M1 檔案就緒**：server.py + requirements + onstart.sh + smoke_test.sh，code review 通過
 2. **M2 vast.ai 單次部署**：手動開 instance + onstart script，smoke test 通過
 3. **M3 固化**：stop/start 驗證持久化、成本記錄、文件補實測數據
+
+## M2 部署記錄（2026-09-15，instance 51131340，TW RTX 3090 $0.161/h）
+
+### 已完成
+- Instance 建立 + provisioning 全自動跑通（~10 min：venv312 → pip install → 7.3GB 權重 → supervisor）
+- `yue2-inference` RUNNING，`/health` 回 `{"status":"ready","model":"m-a-p/YuE2-3B","rev":"29b3558…"}`
+- Caddy RUNNING，`/etc/portal.yaml` 正確生成（8787→7862 YuE2 API）
+- smoke test **ALL CHECKS PASSED**：health 200 / 無 key 401 / models 列表 / 短歌生成 8.8MB FLAC（seed=42）
+- 外部存取驗證：`http://<ip>:<mapped-8787>/health?token=$OPEN_BUTTON_TOKEN` → 200；`/v1/audio/speech?token=…` + `Authorization: Bearer $MUSIC_API_KEY` → 422（cot 驗證生效）
+
+### 發現
+- **雙層 auth**：Caddy 要 `?token=$OPEN_BUTTON_TOKEN`（query param 或 Bearer），inference 再驗 `MUSIC_API_KEY`。兩個都要。
+- Caddy 初次 FATAL 是預期行為：onstart.sh 寫 `/etc/environment` 後 restart 即恢復（M2 坑 3 的解法有效）。
+- 3090 生成速度：短歌（1 verse + 1 chorus）約 2 min 內完成（含 plan + semantic + NAR + VAE）。
+- 權重實際 7.3GB（HF cache），比預估 8GB 略小。
+
+### 成本記錄
+- 本次部署 ~15 min ≈ $0.04；instance 已 **stop**（disk 保留，重開免重抓）
